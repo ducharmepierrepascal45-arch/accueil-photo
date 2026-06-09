@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Accueil SST — Liste papier</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#F0F0F0;padding-bottom:40px;}
+:root{
+  --rouge:#C8102E;--rouge-l:#FDF0EF;--rouge-d:#8B0000;
+  --vert:#1A5C1A;--vert-l:#E6F2E6;
+  --noir:#1A1A1A;--gris:#F4F4F4;--brd:#CCC;--bleu:#003366;
+}
+.hdr{background:var(--noir);border-bottom:4px solid var(--rouge);padding:12px 14px;}
+.hdr h1{font-size:15px;font-weight:700;color:#fff;line-height:1.3;}
+.hdr p{font-size:10px;color:rgba(255,255,255,.5);margin-top:3px;}
+.wrap{max-width:700px;margin:0 auto;padding:10px 12px;}
+.card{background:#fff;border:1px solid var(--brd);margin-bottom:10px;}
+.card-hdr{padding:9px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#fff;}
+.h-noir{background:var(--noir);}
+.h-rouge{background:var(--rouge);}
+.h-vert{background:var(--vert);}
+.h-bleu{background:var(--bleu);}
+.body{padding:12px 14px;}
+label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;color:var(--noir);}
+input,select{width:100%;border:1.5px solid var(--brd);padding:10px;font-size:14px;font-family:Arial;background:var(--gris);outline:none;margin-bottom:8px;}
+input:focus,select:focus{border-color:var(--rouge);background:#fff;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+/* Zone photo */
+.photo-zone{border:3px dashed var(--rouge);background:var(--rouge-l);padding:20px;text-align:center;cursor:pointer;border-radius:4px;margin-bottom:8px;}
+.photo-zone .icon{font-size:38px;margin-bottom:6px;}
+.photo-zone .titre{font-size:14px;font-weight:800;color:var(--rouge);}
+.photo-zone .sub{font-size:11px;color:#888;margin-top:4px;}
+.pbtn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.pbtn{border:2px solid var(--rouge);background:#fff;color:var(--rouge);padding:11px;font-size:13px;font-weight:700;cursor:pointer;border-radius:4px;}
+.preview-img{width:100%;max-height:260px;object-fit:contain;border:2px solid var(--vert);border-radius:4px;margin-bottom:10px;display:none;}
+.preview-img.show{display:block;}
+
+/* Boutons action */
+.btn{width:100%;border:none;padding:14px;font-size:15px;font-weight:700;cursor:pointer;border-radius:3px;margin-bottom:8px;}
+.btn-ia{background:#6B2D8B;color:#fff;}
+.btn-ia:disabled{background:#aaa;}
+.btn-ok{background:var(--vert);color:#fff;}
+.btn-ok:disabled{background:#aaa;}
+
+/* Spinner */
+.spinner{display:none;text-align:center;padding:22px;}
+.spinner.show{display:block;}
+.spin{display:inline-block;width:40px;height:40px;border:4px solid #ddd;border-top-color:#6B2D8B;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Tableau travailleurs */
+.workers-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;}
+.workers-table th{background:var(--noir);color:#fff;padding:6px 5px;text-align:left;font-size:10px;text-transform:uppercase;}
+.workers-table td{border:1px solid #ddd;padding:0;}
+.workers-table td input{border:none;padding:6px 5px;font-size:12px;background:transparent;outline:none;width:100%;}
+.workers-table td input:focus{background:#FFFDE7;}
+.workers-table tr:nth-child(even) td{background:#FAFAFA;}
+.workers-table tr:nth-child(even) td input:focus{background:#FFFDE7;}
+.del-btn{background:var(--rouge);color:#fff;border:none;width:24px;height:24px;cursor:pointer;font-size:14px;font-weight:700;border-radius:3px;}
+
+/* Compteur */
+.count-bar{background:var(--bleu);color:#fff;padding:8px 14px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
+.add-row-btn{background:#fff;color:var(--bleu);border:none;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;border-radius:3px;}
+
+/* Alertes */
+.alerte{padding:12px 14px;margin-bottom:10px;border-left:5px solid;font-size:13px;display:none;line-height:1.5;border-radius:0 4px 4px 0;}
+.alerte.show{display:block;}
+.al-ok{background:var(--vert-l);border-color:var(--vert);color:var(--vert);}
+.al-err{background:var(--rouge-l);border-color:var(--rouge);color:var(--rouge-d);}
+
+/* Session counter */
+.session-bar{background:#1a1a1a;color:#fff;text-align:center;padding:8px;font-size:12px;font-weight:700;margin-bottom:10px;border-radius:4px;display:none;}
+
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--noir);color:#fff;padding:10px 18px;font-size:13px;font-weight:700;z-index:99;display:none;border-radius:3px;max-width:90vw;text-align:center;}
+.toast.show{display:block;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>&#128247; Accueil SST — Liste papier vers Google Sheet</h1>
+  <p>Photographiez votre liste d'accueil &#183; L'IA lit tous les noms &#183; Envoi en lot dans vos accueils</p>
+</div>
+
+<div class="wrap">
+
+<div class="alerte al-ok" id="alertOk"></div>
+<div class="alerte al-err" id="alertErr"></div>
+<div class="session-bar" id="session-bar"></div>
+
+<!-- DATE CHANTIER -->
+<div class="card">
+  <div class="card-hdr h-noir">Informations de la journée</div>
+  <div class="body">
+    <div class="fg2">
+      <div>
+        <label>Date de l'accueil *</label>
+        <input type="date" id="f_date">
+      </div>
+      <div>
+        <label>Chantier</label>
+        <input type="text" id="f_chantier" placeholder="Ex: Viaduc A-13/A-40">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHOTO -->
+<div class="card">
+  <div class="card-hdr h-rouge">1 &#8212; Photographier la liste</div>
+  <div class="body">
+    <div class="photo-zone" id="photo-zone" onclick="document.getElementById('inp-file').click()">
+      <div class="icon">&#128247;</div>
+      <div class="titre">Appuyez pour sélectionner la photo</div>
+      <div class="sub">Votre liste d'accueil manuscrite &#183; L'IA lit tous les noms d'un coup</div>
+    </div>
+    <div class="pbtn-row">
+      <button class="pbtn" onclick="document.getElementById('inp-cam').click()">&#128247; Caméra (mobile)</button>
+      <button class="pbtn" onclick="document.getElementById('inp-file').click()">&#128193; Fichier (PC)</button>
+    </div>
+    <input type="file" id="inp-cam" accept="image/*" capture="environment" style="display:none" onchange="loadPhoto(this)">
+    <input type="file" id="inp-file" accept="image/*" style="display:none" onchange="loadPhoto(this)">
+    <img class="preview-img" id="preview" alt="">
+    <button class="btn btn-ia" id="btn-ia" onclick="readList()" disabled>&#129302; Lire toute la liste avec l'IA</button>
+    <p style="font-size:11px;color:#888;text-align:center;margin-top:4px;">L'IA extrait automatiquement chaque travailleur, son entreprise et la date de son accueil</p>
+  </div>
+</div>
+
+<!-- SPINNER -->
+<div class="spinner" id="spinner">
+  <div class="spin"></div>
+  <p style="margin-top:12px;font-size:13px;color:#666;">L'IA lit la liste...</p>
+</div>
+
+<!-- TABLEAU TRAVAILLEURS -->
+<div class="card" id="card-table" style="display:none;">
+  <div class="card-hdr h-bleu">2 &#8212; Vérifier et corriger les données lues</div>
+  <div class="count-bar">
+    <span id="count-lbl">0 travailleur(s) détecté(s)</span>
+    <button class="add-row-btn" onclick="addRow()">+ Ajouter une ligne</button>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="workers-table" id="workers-table">
+      <thead>
+        <tr>
+          <th style="width:4%;">#</th>
+          <th style="width:22%;">Prénom &amp; Nom</th>
+          <th style="width:22%;">Entreprise</th>
+          <th style="width:14%;">Métier</th>
+          <th style="width:12%;">Date accueil</th>
+          <th style="width:14%;">Formation</th>
+          <th style="width:6%;">&#10005;</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ENVOI -->
+<div id="div-send" style="display:none;">
+  <button class="btn btn-ok" id="btn-send" onclick="envoyerTout()">
+    &#10003; Envoyer tout dans mes accueils SST (<span id="nb-send">0</span> travailleurs)
+  </button>
+</div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var APPS_URL="https://script.google.com/macros/s/AKfycbytuCPaOLcBrw_zj78FUZLw7ExbWNnBWODkkKY8knpmPFZiWeIAKDOk_oICn9GHfw3adg/exec";
+var photoB64=null, rowCount=0, totalSession=0;
+
+// Charger la photo
+function loadPhoto(inp){
+  if(!inp.files||!inp.files[0])return;
+  var rd=new FileReader();
+  rd.onload=function(ev){
+    var img=new Image();
+    img.onload=function(){
+      var MAX=1600,w=img.width,h=img.height;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+      var cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      photoB64=cv.toDataURL('image/jpeg',0.88);
+      var pv=document.getElementById('preview');
+      pv.src=photoB64;pv.classList.add('show');
+      document.getElementById('photo-zone').style.display='none';
+      document.getElementById('btn-ia').disabled=false;
+      document.getElementById('alertErr').classList.remove('show');
+    };
+    img.src=ev.target.result;
+  };
+  rd.readAsDataURL(inp.files[0]);
+}
+
+// Lire la liste avec l'IA
+async function readList(){
+  if(!photoB64){showToast('Choisissez une photo');return;}
+  var btn=document.getElementById('btn-ia');
+  btn.disabled=true; btn.textContent='⏳ Lecture en cours...';
+  document.getElementById('spinner').classList.add('show');
+  document.getElementById('card-table').style.display='none';
+  document.getElementById('div-send').style.display='none';
+  document.getElementById('alertErr').classList.remove('show');
+
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:2000,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:'image/jpeg',data:photoB64.split(',')[1]}},
+          {type:'text',text:'Voici une liste d\'accueil SST de chantier de construction remplie à la main. Extrais CHAQUE ligne de la liste et réponds UNIQUEMENT avec un JSON valide, sans markdown ni backticks. Format:\n[{"nom":"Prénom Nom","entreprise":"Nom entreprise","metier":"Métier ou fonction","date":"YYYY-MM-DD","formation":"formations notées ou vide"},{"nom":...}]\nRègles:\n- Extrais TOUTES les lignes visibles, même partiellement lisibles\n- Si le prénom et nom sont séparés, réunis-les dans "nom"\n- date: convertis en YYYY-MM-DD si possible, sinon mets la date lisible\n- Si un champ est illisible, mets une chaîne vide\n- NE réponds qu\'avec le tableau JSON, rien d\'autre'}
+        ]}]
+      })
+    });
+    var data=await resp.json();
+    var txt=(data.content&&data.content[0]?data.content[0].text:'').trim();
+    txt=txt.replace(/```json|```/g,'').trim();
+
+    var workers=[];
+    try{workers=JSON.parse(txt);}catch(e){
+      showErr('L\'IA n\'a pas pu lire la liste. Vérifiez que la photo est nette et réessayez.');
+      btn.disabled=false; btn.textContent='🔄 Réessayer';
+      document.getElementById('spinner').classList.remove('show');
+      return;
+    }
+
+    document.getElementById('spinner').classList.remove('show');
+    buildTable(workers);
+    btn.disabled=false; btn.textContent='🔄 Re-analyser la photo';
+
+  }catch(err){
+    document.getElementById('spinner').classList.remove('show');
+    showErr('Erreur réseau : '+err.message+'. Ce fichier doit être ouvert depuis GitHub Pages (https://...), pas depuis vos téléchargements locaux.');
+    btn.disabled=false; btn.textContent='🔄 Réessayer';
+  }
+}
+
+// Construire le tableau
+function buildTable(workers){
+  var tbody=document.getElementById('tbody');
+  tbody.innerHTML='';
+  rowCount=0;
+  var defDate=document.getElementById('f_date').value;
+  workers.forEach(function(w){
+    addRow(w.nom||'', w.entreprise||'', w.metier||'', w.date||defDate, w.formation||'');
+  });
+  document.getElementById('card-table').style.display='block';
+  document.getElementById('div-send').style.display='block';
+  updateCount();
+  window.scrollTo(0,document.getElementById('card-table').offsetTop-10);
+}
+
+function addRow(nom,entr,metier,date,form){
+  nom=nom||''; entr=entr||''; metier=metier||''; date=date||document.getElementById('f_date').value; form=form||'';
+  rowCount++;
+  var idx=rowCount;
+  var tr=document.createElement('tr');
+  tr.id='row_'+idx;
+  tr.innerHTML='<td style="text-align:center;font-size:11px;color:#888;padding:4px;">'+idx+'</td>'
+    +'<td><input type="text" value="'+escH(nom)+'" placeholder="Prénom Nom"></td>'
+    +'<td><input type="text" value="'+escH(entr)+'" placeholder="Entreprise"></td>'
+    +'<td><input type="text" value="'+escH(metier)+'" placeholder="Métier"></td>'
+    +'<td><input type="date" value="'+escH(date)+'"></td>'
+    +'<td><input type="text" value="'+escH(form)+'" placeholder="ASP, SIMDUT..."></td>'
+    +'<td style="text-align:center;padding:2px;"><button class="del-btn" onclick="delRow(\'row_'+idx+'\')">&#x2715;</button></td>';
+  document.getElementById('tbody').appendChild(tr);
+  updateCount();
+}
+
+function delRow(id){document.getElementById(id).remove();updateCount();}
+
+function updateCount(){
+  var n=document.getElementById('tbody').children.length;
+  document.getElementById('count-lbl').textContent=n+' travailleur(s) détecté(s)';
+  document.getElementById('nb-send').textContent=n;
+}
+
+// Envoyer tous les travailleurs
+async function envoyerTout(){
+  var rows=document.getElementById('tbody').children;
+  if(rows.length===0){showToast('Aucun travailleur à envoyer');return;}
+  var chantier=document.getElementById('f_chantier').value;
+  var date=document.getElementById('f_date').value;
+  var btn=document.getElementById('btn-send');
+  btn.disabled=true; btn.textContent='⏳ Envoi en cours...';
+
+  var total=rows.length, done=0;
+  Array.from(rows).forEach(function(tr,i){
+    var inputs=tr.querySelectorAll('input');
+    var nom=inputs[0].value.trim();
+    if(!nom)return;
+    // Séparer prénom / nom (premier mot = prénom)
+    var parts=nom.trim().split(' ');
+    var prenom=parts[0]||'';
+    var nomFam=parts.slice(1).join(' ')||'';
+    var entr=inputs[1].value.trim();
+    var met=inputs[2].value.trim();
+    var dt=inputs[3].value||date;
+    var form=inputs[4].value.trim();
+
+    setTimeout(function(){
+      var img=new Image();
+      img.onload=img.onerror=function(){done++;if(done===total)onFinish(total);};
+      img.src=APPS_URL
+        +'?type=accueil'
+        +'&noAccueil=PAPIER-'+(i+1)
+        +'&prenom='+encodeURIComponent(prenom)
+        +'&nom='+encodeURIComponent(nomFam)
+        +'&entreprise='+encodeURIComponent(entr)
+        +'&metier='+encodeURIComponent(met)
+        +'&date='+encodeURIComponent(dt)
+        +'&formations='+encodeURIComponent(form||'Accueil papier')
+        +'&braceletMedical=Non vérif.'
+        +'&programmePrevention=Oui'
+        +'&sujetsConfirmes=N/A'
+        +'&tolerancesConfirmees=N/A'
+        +'&signatureArt49=Papier'
+        +'&nomConsentement='+encodeURIComponent(nom)
+        +'&dateSignature='+encodeURIComponent(dt)
+        +'&consentementLSSTArt49=Signé sur papier'
+        +'&signatureConsequences=Signé sur papier'
+        +'&photosJointes=0'
+        +'&cossInitiales=PPD'
+        +'&ccq=';
+    }, i*300); // délai pour ne pas saturer Apps Script
+  });
+
+  // Fallback timeout
+  setTimeout(function(){
+    if(done<total)onFinish(total);
+  }, total*350+3000);
+}
+
+function onFinish(n){
+  totalSession+=n;
+  document.getElementById('btn-send').disabled=false;
+  document.getElementById('btn-send').textContent='✅ Envoyer tout dans mes accueils SST ('+document.getElementById('tbody').children.length+' travailleurs)';
+  var ok=document.getElementById('alertOk');
+  ok.textContent='✅ '+n+' accueil(s) ajouté(s) à votre Google Sheet!';
+  ok.classList.add('show');
+  window.scrollTo(0,0);
+  var sb=document.getElementById('session-bar');
+  sb.textContent='Session : '+totalSession+' accueil(s) enregistré(s)';
+  sb.style.display='block';
+  setTimeout(function(){ok.classList.remove('show');},6000);
+  // Reset pour prochaine photo
+  setTimeout(function(){
+    photoB64=null;
+    document.getElementById('preview').classList.remove('show');
+    document.getElementById('photo-zone').style.display='block';
+    document.getElementById('btn-ia').disabled=true;
+    document.getElementById('btn-ia').textContent='🤖 Lire toute la liste avec l\'IA';
+    document.getElementById('card-table').style.display='none';
+    document.getElementById('div-send').style.display='none';
+    document.getElementById('tbody').innerHTML='';
+    ['inp-cam','inp-file'].forEach(function(id){document.getElementById(id).value='';});
+  },5000);
+}
+
+function showErr(msg){
+  var e=document.getElementById('alertErr');
+  e.innerHTML=msg;
+  e.classList.add('show');
+  window.scrollTo(0,0);
+}
+function escH(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+document.addEventListener('DOMContentLoaded',function(){
+  document.getElementById('f_date').value=new Date().toISOString().split('T')[0];
+  // Chargement mémoire chantier
+  var ch=localStorage.getItem('rap_chantier');
+  if(ch)document.getElementById('f_chantier').value=ch;
+  document.getElementById('f_chantier').addEventListener('input',function(){localStorage.setItem('rap_chantier',this.value);});
+});
+</script>
+</body>
+</html>
